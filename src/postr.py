@@ -34,7 +34,7 @@ from AboutDialog import AboutDialog
 from AuthenticationDialog import AuthenticationDialog
 from ProgressDialog import ProgressDialog
 from ErrorDialog import ErrorDialog
-import ImageStore, ImageList, StatusBar, PrivacyCombo, SafetyCombo, GroupSelector, ContentTypeCombo
+import ImageStore, ImageList, StatusBar, GroupSelector
 from proxyclient import EXTRA_STEP_SET_ID, EXTRA_STEP_GROUPS, EXTRA_STEP_LICENSE, EXTRA_STEP_NEW_SET, UploadProgressTracker
 
 from flickrest import Flickr
@@ -235,9 +235,22 @@ class Postr(unique.UniqueApp):
         if handler:
             return handler(str1, str2, int1, int2)
         else:
-            widget = eval(function_name)
-            widget.show()
-            return widget
+            modsplit = function_name.split('.')
+            if len(modsplit) < 2:
+                raise Exception('Unrecognized custom widget func[%s]' % function_name)
+
+            modulename = '.'.join(modsplit[:-1])
+            fname = modsplit[-1]
+
+            # __import__('A.B') -> return A if len(fromlist)==0 else B
+            module = __import__(modulename, fromlist=[None], level=0)
+            func   = getattr(module, fname, None)
+            if func:
+                widget = func()
+                widget.show()
+                return widget
+
+        raise Exception('Unknown custom widget func[%s]' % function_name)
 
     def group_selector_new(self, *args):
         w = GroupSelector.GroupSelector(self.flickr)
