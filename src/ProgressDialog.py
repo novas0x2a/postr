@@ -16,6 +16,7 @@
 # St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import gtk
+from gettext import gettext as _
 
 class ProgressDialog(gtk.Dialog):
     def __init__(self, cancel_cb):

@@ -18,7 +18,6 @@
 import logging, os, mimetools, urllib
 import gio
 from twisted.internet import defer
-from twisted.python.failure import Failure
 import proxyclient as client
 
 try:

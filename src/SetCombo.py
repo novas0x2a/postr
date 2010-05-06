@@ -18,6 +18,7 @@
 import datetime
 import gobject, gtk
 from twisted.web.client import getPage
+from gettext import gettext as _
 
 _NO_PHOTOSET_ID = "-1"
 _NO_PHOTOSET_LABEL = _("None")

@@ -19,6 +19,7 @@ import gtk
 from ErrorDialog import ErrorDialog
 from util import greek
 from xml.sax.saxutils import escape
+from gettext import gettext as _
 
 class StatusBar(gtk.Label):
     def __init__(self, flickr):

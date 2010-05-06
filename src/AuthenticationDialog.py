@@ -16,6 +16,7 @@
 # St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import os, gtk, gconf
+from gettext import gettext as _
 
 def on_url_clicked(button, url):
     """Global LinkButton handler that starts the default GNOME HTTP handler, or

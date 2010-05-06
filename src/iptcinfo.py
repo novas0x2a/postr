@@ -239,7 +239,7 @@ SURELY_WRITE_CHARSET_INFO = False
 
 from struct import pack, unpack
 from cStringIO import StringIO
-import sys, re, codecs, os
+import sys, re, os
 
 class String(basestring):
   def __iadd__(self, other):
@@ -972,7 +972,7 @@ class IPTCInfo(object):
     app0data = self.jpegSkipVariable(fh, app0data)
     if app0data is None:
       self.error = 'jpegSkipVariable failed'
-      self.log(error)
+      self.log(self.error)
       return None
 
     if ord(marker) == 0xe0 or not discardAppParts:
@@ -1186,7 +1186,7 @@ class IPTCInfo(object):
               tuple(map(ord, row) + [''.join(map(P, row))])
     return ered
 
-  def jpegDebugScan(filename):
+  def jpegDebugScan(self, filename):
     """Also very helpful when debugging."""
     assert isinstance(filename, basestring) and os.path.isfile(filename)
     fh = file(filename, 'wb')

@@ -16,6 +16,7 @@
 # St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import gobject, gtk
+from gettext import gettext as _
 
 class LicenseCombo(gtk.ComboBox):
     def __init__(self, flickr):

@@ -17,6 +17,7 @@
 
 import gtk
 from version import __version__
+from gettext import gettext as _
 
 class AboutDialog(gtk.AboutDialog):
     def __init__(self, parent=None):

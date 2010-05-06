@@ -15,13 +15,13 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # St, Fifth Floor, Boston, MA 02110-1301 USA
 
-import logging, os, urllib
-from urlparse import urlparse
+import os
 from os.path import basename
 
 import pygtk; pygtk.require ("2.0")
-import gobject, gtk, gtk.glade, gconf, gio
+import gtk, gtk.glade, gconf, gio
 import gnome.ui
+from gettext import gettext as _
 
 
 try:
@@ -40,14 +40,14 @@ from proxyclient import EXTRA_STEP_SET_ID, EXTRA_STEP_GROUPS, EXTRA_STEP_LICENSE
 from flickrest import Flickr
 import EXIF
 from iptcinfo import IPTCInfo
-from util import *
+import util
 from datetime import datetime
 import shelve
 
 try:
-    from gtkunique import UniqueApp
+    import gtkunique as unique
 except ImportError:
-    from DummyUnique import UniqueApp
+    import DummyUnique as unique
 
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -63,9 +63,9 @@ _FILE_ATTRIBUTES = ",".join([gio.FILE_ATTRIBUTE_STANDARD_TYPE,
                              gio.FILE_ATTRIBUTE_STANDARD_SIZE,
                              gio.FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME])
 
-class Postr(UniqueApp):
+class Postr(unique.UniqueApp):
     def __init__(self):
-        UniqueApp.__init__(self, 'com.burtonini.Postr')
+        unique.UniqueApp.__init__(self, 'com.burtonini.Postr')
         try:
             self.connect("message", self.on_message)
         except AttributeError:
@@ -84,33 +84,33 @@ class Postr(UniqueApp):
         glade = gtk.glade.XML(os.path.join(os.path.dirname(__file__), "postr.glade"))
         glade.signal_autoconnect(self)
 
-        get_glade_widgets(glade, self,
-                           ("window",
-                            "upload_menu",
-                            "upload_button",
-                            "remove_menu",
-                            "remove_button",
-                            "save_session_menu",
-                            "avatar_image",
-                            "statusbar",
-                            "thumbnail_image",
-                            "info_table",
-                            "title_entry",
-                            "desc_view",
-                            "tags_entry",
-                            "set_combo",
-                            "rename_button",
-                            "group_selector",
-                            "privacy_combo",
-                            "safety_combo",
-                            "visible_check",
-                            "content_type_combo",
-                            "license_combo",
-                            "thumbview")
-                           )
-        align_labels(glade, ("title_label", "desc_label",
-                             "tags_label", "set_label",
-                             "privacy_label", "safety_label"))
+        util.get_glade_widgets(glade, self,
+                                ("window",
+                                 "upload_menu",
+                                 "upload_button",
+                                 "remove_menu",
+                                 "remove_button",
+                                 "save_session_menu",
+                                 "avatar_image",
+                                 "statusbar",
+                                 "thumbnail_image",
+                                 "info_table",
+                                 "title_entry",
+                                 "desc_view",
+                                 "tags_entry",
+                                 "set_combo",
+                                 "rename_button",
+                                 "group_selector",
+                                 "privacy_combo",
+                                 "safety_combo",
+                                 "visible_check",
+                                 "content_type_combo",
+                                 "license_combo",
+                                 "thumbview")
+                                )
+        util.align_labels(glade, ("title_label", "desc_label",
+                                  "tags_label", "set_label",
+                                  "privacy_label", "safety_label"))
         
         # Just for you, Daniel.
         try:
@@ -273,11 +273,11 @@ class Postr(UniqueApp):
 
     def on_message(self, app, command, command_data, startup_id, screen, workspace):
         """Callback from UniqueApp, when a message arrives."""
-        if command == gtkunique.OPEN:
+        if command == unique.OPEN:
             self.add_image_filename(command_data)
-            return gtkunique.RESPONSE_OK
+            return unique.RESPONSE_OK
         else:
-            return gtkunique.RESPONSE_ABORT
+            return unique.RESPONSE_ABORT
 
     def on_model_changed(self, *args):
         # We don't care about the arguments, because we just want to know when
@@ -348,7 +348,7 @@ class Postr(UniqueApp):
             }
             def get_buddyicon_cb(icon):
                 self.avatar_image.set_from_pixbuf(icon)
-            get_buddyicon(self.flickr, data).addCallbacks(get_buddyicon_cb, self.twisted_error)
+            util.get_buddyicon(self.flickr, data).addCallbacks(get_buddyicon_cb, self.twisted_error)
         # Need to call people.getInfo to get the iconserver/iconfarm
         self.flickr.people_getInfo(user_id=self.flickr.get_nsid()).addCallbacks(getinfo_cb, self.twisted_error)
     
@@ -455,7 +455,6 @@ class Postr(UniqueApp):
                 return None
 
         def update_preview_cb(file_chooser, preview):
-            filename = file_chooser.get_preview_filename()
             uri = file_chooser.get_preview_uri()
 
             if uri:
@@ -623,7 +622,7 @@ class Postr(UniqueApp):
             # Clamp the size to 512
             if tw > 512: tw = 512
             if th > 512: th = 512
-            (tw, th) = get_thumb_size(simage.get_width(),
+            (tw, th) = util.get_thumb_size(simage.get_width(),
                                            simage.get_height(),
                                            tw, th)
 
@@ -818,7 +817,7 @@ class Postr(UniqueApp):
                 preview = preview.rotate_simple(gtk.gdk.PIXBUF_ROTATE_COUNTERCLOCKWISE)
         
         # Now scale the preview to a thumbnail
-        sizes = get_thumb_size(preview.get_width(), preview.get_height(), 64, 64)
+        sizes = util.get_thumb_size(preview.get_width(), preview.get_height(), 64, 64)
         thumb = preview.scale_simple(sizes[0], sizes[1], gtk.gdk.INTERP_BILINEAR)
 
         # Slurp data from the EXIF and IPTC tags
@@ -871,10 +870,10 @@ class Postr(UniqueApp):
             # TODO: don't scale up if the image is smaller than 512/512
             
             # Scale the pixbuf to a preview
-            sizes = get_thumb_size(pixbuf.get_width(), pixbuf.get_height(), 512, 512)
+            sizes = util.get_thumb_size(pixbuf.get_width(), pixbuf.get_height(), 512, 512)
             preview = pixbuf.scale_simple(sizes[0], sizes[1], gtk.gdk.INTERP_BILINEAR)
             # Now scale to a thumbnail
-            sizes = get_thumb_size(pixbuf.get_width(), pixbuf.get_height(), 64, 64)
+            sizes = util.get_thumb_size(pixbuf.get_width(), pixbuf.get_height(), 64, 64)
             thumb = pixbuf.scale_simple(sizes[0], sizes[1], gtk.gdk.INTERP_BILINEAR)
 
             # TODO: This is wrong, and should generate a PNG here and use the

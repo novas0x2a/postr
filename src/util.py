@@ -63,7 +63,7 @@ def align_labels(glade, names):
     """Add the list of widgets identified by names in glade to a horizontal
     sizegroup."""
     group = gtk.SizeGroup(gtk.SIZE_GROUP_HORIZONTAL)
-    widget = [group.add_widget(get_widget_checked(glade, name)) for name in names]
+    [group.add_widget(get_widget_checked(glade, name)) for name in names]
 
 
 __buddy_cache = None
