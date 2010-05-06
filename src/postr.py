@@ -287,7 +287,7 @@ class Postr(unique.UniqueApp):
     def on_message(self, app, command, command_data, startup_id, screen, workspace):
         """Callback from UniqueApp, when a message arrives."""
         if command == unique.OPEN:
-            self.add_image_filename(command_data)
+            self.add_image(command_data)
             return unique.RESPONSE_OK
         else:
             return unique.RESPONSE_ABORT
@@ -487,7 +487,7 @@ class Postr(unique.UniqueApp):
             dialog.hide()
             self.last_folder = dialog.get_current_folder_uri()
             for uri in dialog.get_uris():
-                self.add_image_uri(uri)
+                self.add_image(uri)
         dialog.destroy()
             
     def on_quit_activate(self, widget, *args):
@@ -727,35 +727,24 @@ class Postr(unique.UniqueApp):
             self.thumbnail_image.set_from_icon_name("postr", self.logo_icon_size)
         [obj.handler_unblock(i) for obj,i in self.change_signals]
 
-    def add_image_dir_file(self, gfile):
-        children = gfile.enumerate_children(_FILE_ATTRIBUTES, flags=gio.FILE_QUERY_INFO_NONE)
-        child_info = children.next_file()
-        while child_info:
-            file_type = child_info.get_file_type()
-            if file_type == gio.FILE_TYPE_REGULAR:
-                self.add_image_fileinfo(gfile, child_info)
-            elif file_type == gio.FILE_TYPE_DIRECTORY:
-                dirname = os.path.join(gfile.get_uri(), child_info.get_name())
-                self.add_image_dir_file(gio.File(dirname))
-            else:
-                print "Unhandled file %s" % gfile.get_uri()
-            child_info = children.next_file()
-        children.close()
-
-    def add_image_uri(self, uri):
+    def add_image(self, gfile, ginfo=None):
         """Add a file to the image list.  Called by the File->Add Photo and drag
         and drop callbacks."""
-        return self.add_image_filename(uri)
 
-    def add_image_filename(self, filename):
-        gfile = gio.File(filename)
-        fileinfo = gfile.query_info(_FILE_ATTRIBUTES, flags=gio.FILE_QUERY_INFO_NONE)
-        self.add_image_file(gfile, fileinfo)
+        if not isinstance(gfile, gio.File):
+            gfile = gio.File(gfile)
 
-    def add_image_fileinfo(self, parent, fileinfo):
-        filename = os.path.join(parent.get_uri(), fileinfo.get_name())
-        gfile = gio.File(filename)
-        self.add_image_file(gfile, fileinfo)
+        if ginfo is None:
+            ginfo  = gfile.query_info(_FILE_ATTRIBUTES)
+
+        file_type = ginfo.get_file_type()
+        if file_type == gio.FILE_TYPE_REGULAR:
+            self._add_image_file(gfile, ginfo)
+        elif file_type == gio.FILE_TYPE_DIRECTORY:
+            for child_info in gfile.enumerate_children(_FILE_ATTRIBUTES):
+                self.add_image(os.path.join(gfile.get_uri(), child_info.get_name()), child_info)
+        else:
+            print "Unhandled file %s" % gfile.get_uri()
 
     def _on_preview_size_prepared(self, loader, width, height):
         """Appropriately scale the image preview to fit inside 512x512"""
@@ -767,7 +756,7 @@ class Postr(unique.UniqueApp):
             new_height = 512
         loader.set_size(new_width, new_height)
 
-    def add_image_file(self, gfile, fileinfo):
+    def _add_image_file(self, gfile, fileinfo):
         filesize = fileinfo.get_size()
         if filesize > self.statusbar.maxfile * 1024 * 1024:
             d = ErrorDialog(self.window)
@@ -907,15 +896,7 @@ class Postr(unique.UniqueApp):
         
         elif targetType == ImageList.DRAG_URI:
             for uri in selection.get_uris():
-                gfile = gio.File(uri)
-                fileinfo = gfile.query_info(_FILE_ATTRIBUTES)
-                file_type = fileinfo.get_file_type()
-                if file_type == gio.FILE_TYPE_REGULAR:
-                    self.add_image_file(gfile, fileinfo)
-                elif file_type == gio.FILE_TYPE_DIRECTORY:
-                    self.add_image_dir_file(gfile)
-                else:
-                    print "Unhandled file %s" % gfile.get_uri()
+                self.add_image(uri)
         else:
             print "Unhandled target type %d" % targetType
 
@@ -1330,7 +1311,7 @@ class Postr(unique.UniqueApp):
     def _unmarshal_and_import_row(self, index, row, should_ignore_photosets):
         (path, uri, title, desc, tags, set_id, groups, privacy_path, safety_path, visible) = row
 
-        self.add_image_uri(uri)
+        self.add_image(uri)
         self._set_value_in_model(ImageStore.COL_TITLE, title, [index])
         self._set_value_in_model(ImageStore.COL_DESCRIPTION, desc, [index])
         self._set_value_in_model(ImageStore.COL_TAGS, tags, [index])
